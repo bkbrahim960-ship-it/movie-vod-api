@@ -1,0 +1,34 @@
+{
+  "github": [
+    {
+      "name": "iptv-org VOD",
+      "url": "https://iptv-org.github.io/iptv/index.m3u",
+      "type": "m3u",
+      "language": "en"
+    }
+  ],
+  "telegram": [
+    {
+      "name": "m3u_arabic",
+      "username": "m3u_arabic",
+      "type": "channel"
+    },
+    {
+      "name": "iptv_arabic",
+      "username": "iptv_arab",
+      "type": "channel"
+    }
+  ],
+  "iptv_sites": [
+    {
+      "name": "iptvcat",
+      "url": "https://iptvcat.com",
+      "type": "scrape"
+    },
+    {
+      "name": "freeiptv",
+      "url": "https://freeiptv.life",
+      "type": "scrape"
+    }
+  ]
+}
