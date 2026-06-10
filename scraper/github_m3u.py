@@ -36,7 +36,12 @@ class GitHubM3UScraper(BaseScraper):
 
         results = []
         seen_titles = set()
+        processed = 0
+        max_entries = 500
         for title, url, logo, group in entries:
+            processed += 1
+            if processed > max_entries:
+                break
             if not title:
                 continue
 
@@ -53,6 +58,8 @@ class GitHubM3UScraper(BaseScraper):
                 tmdb_data = self.tmdb.search_tv(clean_title, year)
             else:
                 tmdb_data = self.tmdb.search_movie(clean_title, year)
+            import time
+            time.sleep(0.3)
 
             if tmdb_data:
                 enriched = self.tmdb.enrich_movie(tmdb_data)

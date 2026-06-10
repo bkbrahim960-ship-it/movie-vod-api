@@ -1,34 +1,36 @@
 {
   "github": [
     {
-      "name": "iptv-org VOD",
-      "url": "https://iptv-org.github.io/iptv/index.m3u",
+      "name": "Pluto TV",
+      "url": "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/refs/heads/main/playlists/plutotv_all.m3u",
+      "type": "m3u",
+      "language": "en"
+    },
+    {
+      "name": "Tubi TV",
+      "url": "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/refs/heads/main/playlists/tubi_all.m3u",
+      "type": "m3u",
+      "language": "en"
+    },
+    {
+      "name": "Roku Channel",
+      "url": "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/refs/heads/main/playlists/roku_all.m3u",
+      "type": "m3u",
+      "language": "en"
+    },
+    {
+      "name": "VOD-Org",
+      "url": "https://vod-org.github.io/vod/index.m3u8",
+      "type": "m3u",
+      "language": "en"
+    },
+    {
+      "name": "Free-TV HD",
+      "url": "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8",
       "type": "m3u",
       "language": "en"
     }
   ],
-  "telegram": [
-    {
-      "name": "m3u_arabic",
-      "username": "m3u_arabic",
-      "type": "channel"
-    },
-    {
-      "name": "iptv_arabic",
-      "username": "iptv_arab",
-      "type": "channel"
-    }
-  ],
-  "iptv_sites": [
-    {
-      "name": "iptvcat",
-      "url": "https://iptvcat.com",
-      "type": "scrape"
-    },
-    {
-      "name": "freeiptv",
-      "url": "https://freeiptv.life",
-      "type": "scrape"
-    }
-  ]
+  "telegram": [],
+  "iptv_sites": []
 }
