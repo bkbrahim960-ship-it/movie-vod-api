@@ -6,6 +6,7 @@ from scraper.vidsrc import VidsrcScraper
 from scraper.vidapi import VidAPIScraper
 from scraper.base import BaseScraper
 from scraper.tmdb import TMDBClient
+from scraper.m3u8_resolver import M3U8Resolver
 
 __all__ = [
     "GitHubM3UScraper",

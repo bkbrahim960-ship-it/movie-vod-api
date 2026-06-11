@@ -3,6 +3,7 @@ import re
 from typing import List
 from bs4 import BeautifulSoup
 from scraper.base import BaseScraper
+from scraper.m3u8_resolver import M3U8Resolver
 from models import MediaItem, StreamInfo
 from scraper.tmdb import TMDBClient
 
@@ -13,6 +14,7 @@ class CinemaOSScraper(BaseScraper):
     def __init__(self, tmdb: TMDBClient):
         super().__init__()
         self.tmdb = tmdb
+        self.m3u8 = M3U8Resolver()
 
     def scrape_all(self) -> List[MediaItem]:
         items = []
@@ -61,6 +63,19 @@ class CinemaOSScraper(BaseScraper):
 
             if details:
                 enriched = self.tmdb.enrich_movie(details)
+                m3u8_urls = self.m3u8.resolve(mtype, tmdb_id)
+                streams = []
+                if m3u8_urls:
+                    for url in m3u8_urls:
+                        streams.append(StreamInfo(url=url, quality="HD", source="vidsrc-m3u8", language="en"))
+                streams.append(StreamInfo(
+                    url=f"https://vidsrc.to/embed/{mtype}/{tmdb_id}",
+                    quality="HD", source="vidsrc-embed",
+                ))
+                streams.append(StreamInfo(
+                    url=f"https://vaplayer.ru/embed/{mtype}/{tmdb_id}",
+                    quality="HD", source="vidapi-embed",
+                ))
                 item = MediaItem(
                     tmdb_id=tmdb_id,
                     title=enriched["title"],
@@ -72,23 +87,7 @@ class CinemaOSScraper(BaseScraper):
                     genres=enriched.get("genres", []),
                     rating=enriched.get("rating"),
                     media_type=mtype,
-                    streams=[
-                        StreamInfo(
-                            url=f"{self.BASE_URL}/watch/{mtype}/{tmdb_id}",
-                            quality="HD",
-                            source="cinemaos",
-                        ),
-                        StreamInfo(
-                            url=f"https://vidsrc.to/embed/{mtype}/{tmdb_id}",
-                            quality="HD",
-                            source="vidsrc",
-                        ),
-                        StreamInfo(
-                            url=f"https://vaplayer.ru/embed/{mtype}/{tmdb_id}",
-                            quality="HD",
-                            source="vidapi",
-                        ),
-                    ],
+                    streams=streams,
                 )
                 items.append(item)
 

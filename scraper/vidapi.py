@@ -2,6 +2,7 @@ import json
 import re
 from typing import List, Optional
 from scraper.base import BaseScraper
+from scraper.m3u8_resolver import M3U8Resolver
 from models import MediaItem, StreamInfo
 from scraper.tmdb import TMDBClient
 
@@ -13,6 +14,7 @@ class VidAPIScraper(BaseScraper):
     def __init__(self, tmdb: TMDBClient):
         super().__init__()
         self.tmdb = tmdb
+        self.m3u8 = M3U8Resolver()
 
     def scrape_all(self) -> List[MediaItem]:
         items = []
@@ -59,6 +61,19 @@ class VidAPIScraper(BaseScraper):
 
         if details:
             enriched = self.tmdb.enrich_movie(details)
+            m3u8_urls = self.m3u8.resolve(media_type, tmdb_id)
+            streams = []
+            if m3u8_urls:
+                for url in m3u8_urls:
+                    streams.append(StreamInfo(url=url, quality="HD", source="vidsrc-m3u8", language="en"))
+            streams.append(StreamInfo(
+                url=f"{self.PLAYER_URL}/embed/{media_type}/{tmdb_id}",
+                quality="HD", source="vidapi-embed", language="en",
+            ))
+            streams.append(StreamInfo(
+                url=f"https://vidsrc.to/embed/{media_type}/{tmdb_id}",
+                quality="HD", source="vidsrc-embed", language="en",
+            ))
             return MediaItem(
                 tmdb_id=tmdb_id,
                 title=enriched["title"],
@@ -70,19 +85,6 @@ class VidAPIScraper(BaseScraper):
                 genres=enriched.get("genres", []),
                 rating=enriched.get("rating"),
                 media_type=media_type,
-                streams=[
-                    StreamInfo(
-                        url=f"{self.PLAYER_URL}/embed/{media_type}/{tmdb_id}",
-                        quality="HD",
-                        source="vidapi",
-                        language="en",
-                    ),
-                    StreamInfo(
-                        url=f"https://vidsrc.to/embed/{media_type}/{tmdb_id}",
-                        quality="HD",
-                        source="vidsrc",
-                        language="en",
-                    ),
-                ],
+                streams=streams,
             )
         return None

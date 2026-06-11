@@ -1,8 +1,8 @@
 import json
-import re
+import time
 from typing import List, Optional
-from bs4 import BeautifulSoup
 from scraper.base import BaseScraper
+from scraper.m3u8_resolver import M3U8Resolver
 from models import MediaItem, StreamInfo
 from scraper.tmdb import TMDBClient
 
@@ -13,88 +13,55 @@ class VidsrcScraper(BaseScraper):
     def __init__(self, tmdb: TMDBClient):
         super().__init__()
         self.tmdb = tmdb
+        self.m3u8 = M3U8Resolver()
 
     def scrape_all(self) -> List[MediaItem]:
         items = []
-        items.extend(self._scrape_latest("movie"))
-        items.extend(self._scrape_latest("tv"))
+        for tmdb_id in self._get_popular_ids()[:30]:
+            item = self.scrape_movie(tmdb_id)
+            if item:
+                items.append(item)
+            time.sleep(1)
         return items
 
-    def _scrape_latest(self, media_type: str, pages: int = 2) -> List[MediaItem]:
-        items = []
-
-        for page in range(1, pages + 1):
-            url = f"{self.BASE_URL}/vapi/{media_type}/new/{page}"
+    def _get_popular_ids(self) -> List[int]:
+        ids = []
+        for page in [1, 2]:
+            url = f"{self.BASE_URL}/vapi/movie/new/{page}"
             data = self._fetch_json(url)
             if not data:
-                url2 = f"{self.BASE_URL}/vapi/{media_type}/add/{page}"
-                data = self._fetch_json(url2)
+                url = f"{self.BASE_URL}/vapi/movie/add/{page}"
+                data = self._fetch_json(url)
             if not data:
                 continue
-
             results = data if isinstance(data, list) else data.get("result", [])
-            if not results:
-                continue
-
-            for entry in results[:50]:
-                item = self._process_entry(entry, media_type)
-                if item:
-                    items.append(item)
-
-        return items
-
-    def _process_entry(self, entry: dict, media_type: str) -> Optional[MediaItem]:
-        tmdb_id = entry.get("tmdb_id") or entry.get("id")
-        imdb_id = entry.get("imdb_id")
-        title = entry.get("title", "")
-        year = entry.get("year")
-
-        if not tmdb_id and imdb_id:
-            pass
-        if not tmdb_id:
-            return None
-
-        try:
-            tmdb_id = int(tmdb_id)
-        except (ValueError, TypeError):
-            return None
-
-        if media_type == "tv":
-            details = self.tmdb.get_tv_details(tmdb_id)
-        else:
-            details = self.tmdb.get_movie_details(tmdb_id)
-
-        if details:
-            enriched = self.tmdb.enrich_movie(details)
-            embed_url = f"{self.BASE_URL}/embed/{media_type}/{tmdb_id}"
-            return MediaItem(
-                tmdb_id=tmdb_id,
-                title=enriched["title"],
-                title_ar=enriched.get("title_ar"),
-                year=enriched.get("year") or year,
-                overview=enriched.get("overview"),
-                poster=enriched.get("poster"),
-                backdrop=enriched.get("backdrop"),
-                genres=enriched.get("genres", []),
-                rating=enriched.get("rating"),
-                media_type=media_type,
-                streams=[
-                    StreamInfo(url=embed_url, quality="HD", source="vidsrc", language="en"),
-                    StreamInfo(
-                        url=f"https://vaplayer.ru/embed/{media_type}/{tmdb_id}",
-                        quality="HD",
-                        source="vidapi",
-                        language="en",
-                    ),
-                ],
-            )
-        return None
+            for entry in results[:30]:
+                tid = entry.get("tmdb_id") or entry.get("id")
+                if tid:
+                    try:
+                        ids.append(int(tid))
+                    except (ValueError, TypeError):
+                        pass
+        return ids
 
     def scrape_movie(self, tmdb_id: int) -> Optional[MediaItem]:
         details = self.tmdb.get_movie_details(tmdb_id)
         if not details:
             return None
         enriched = self.tmdb.enrich_movie(details)
+
+        m3u8_urls = self.m3u8.resolve("movie", tmdb_id)
+        streams = []
+
+        if m3u8_urls:
+            for url in m3u8_urls:
+                streams.append(StreamInfo(url=url, quality="HD", source="vidsrc-m3u8", language="en"))
+        else:
+            streams.append(StreamInfo(
+                url=f"{self.BASE_URL}/embed/movie/{tmdb_id}",
+                quality="HD", source="vidsrc-embed", language="en",
+            ))
+
         return MediaItem(
             tmdb_id=tmdb_id,
             title=enriched["title"],
@@ -106,18 +73,7 @@ class VidsrcScraper(BaseScraper):
             genres=enriched.get("genres", []),
             rating=enriched.get("rating"),
             media_type="movie",
-            streams=[
-                StreamInfo(
-                    url=f"{self.BASE_URL}/embed/movie/{tmdb_id}",
-                    quality="HD",
-                    source="vidsrc",
-                ),
-                StreamInfo(
-                    url=f"https://vaplayer.ru/embed/movie/{tmdb_id}",
-                    quality="HD",
-                    source="vidapi",
-                ),
-            ],
+            streams=streams,
         )
 
     def _fetch_json(self, url: str) -> Optional[dict]:
