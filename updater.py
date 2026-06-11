@@ -3,7 +3,7 @@ import time
 from typing import List
 from database import Database
 from models import MediaItem
-from scraper import GitHubM3UScraper, TelegramScraper, IPTVSitesScraper, TMDBClient
+from scraper import GitHubM3UScraper, TelegramScraper, IPTVSitesScraper, CinemaOSScraper, VidsrcScraper, VidAPIScraper, TMDBClient
 
 UPDATE_INTERVAL = 60
 
@@ -18,6 +18,9 @@ class Updater:
 
     def _init_scrapers(self):
         self._scrapers = [
+            CinemaOSScraper(self.tmdb),
+            VidsrcScraper(self.tmdb),
+            VidAPIScraper(self.tmdb),
             GitHubM3UScraper(self.tmdb),
             TelegramScraper(self.tmdb),
             IPTVSitesScraper(self.tmdb),
